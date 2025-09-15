@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Key Holder Assignment</title>
+  <title>MHE Key Assignment & Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
@@ -13,151 +13,220 @@
     input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:10px; border:none; font-size:15px; }
     button { background:#3b82f6; color:#fff; cursor:pointer; }
     .secondary { background:#ef4444; }
+    table { width:100%; border-collapse: collapse; margin-top:20px; }
+    th, td { border:1px solid #444; padding:8px; text-align:center; }
+    th { background:#1f2937; }
+    .filters { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
   </style>
 </head>
 <body>
-  <h2>Assign / Return MHE Key</h2>
-  <div class="card">
-    <label>Driver Name / ID:
-      <select id="driverSelect">
-        <option value="">-- Select Driver --</option>
-      </select>
-    </label>
 
-    <label>Select MHE Key:
-      <select id="mheSelectKey">
-        <option value="">-- Select MHE --</option>
-        <option value="MHE1">MHE1</option>
-        <option value="MHE2">MHE2</option>
-        <option value="MHE3">MHE3</option>
-        <option value="MHE4">MHE4</option>
-        <option value="MHE5">MHE5</option>
-        <option value="MHE6">MHE6</option>
-        <option value="MHE7">MHE7</option>
-        <option value="MHE8">MHE8</option>
-        <option value="MHE9">MHE9</option>
-        <option value="MHE10">MHE10</option>
-        <option value="MHE11">MHE11</option>
-      </select>
-    </label>
+<h2>MHE Key Assignment & Report</h2>
 
-    <button onclick="assignKeyToDriver()">Assign Me</button>
-    <button class="secondary" onclick="returnKey()">Return Key</button>
+<div class="card" id="secureContent" style="display:none;">
+  <h3>Assign / Return MHE Key</h3>
+  <label>Driver Name / ID:
+    <select id="driverSelect">
+      <option value="">-- Select Driver --</option>
+    </select>
+  </label>
+
+  <label>Select MHE Key:
+    <select id="mheSelectKey">
+      <option value="">-- Select MHE --</option>
+      <option value="MHE1">MHE1</option>
+      <option value="MHE2">MHE2</option>
+      <option value="MHE3">MHE3</option>
+      <option value="MHE4">MHE4</option>
+      <option value="MHE5">MHE5</option>
+      <option value="MHE6">MHE6</option>
+      <option value="MHE7">MHE7</option>
+      <option value="MHE8">MHE8</option>
+      <option value="MHE9">MHE9</option>
+      <option value="MHE10">MHE10</option>
+      <option value="MHE11">MHE11</option>
+    </select>
+  </label>
+
+  <button onclick="assignKeyToDriver()">Assign Me</button>
+  <button class="secondary" onclick="returnKey()">Return Key</button>
+</div>
+
+<div class="card" id="reportSection" style="display:none;">
+  <h3>MHE Assignment History</h3>
+  <div class="filters">
+    <input type="date" id="reportDate">
+    <input type="text" id="driverFilter" placeholder="Filter by driver">
+    <select id="mheFilter">
+      <option value="">All MHEs</option>
+      <option value="MHE1">MHE1</option>
+      <option value="MHE2">MHE2</option>
+      <option value="MHE3">MHE3</option>
+      <option value="MHE4">MHE4</option>
+      <option value="MHE5">MHE5</option>
+      <option value="MHE6">MHE6</option>
+      <option value="MHE7">MHE7</option>
+      <option value="MHE8">MHE8</option>
+      <option value="MHE9">MHE9</option>
+      <option value="MHE10">MHE10</option>
+      <option value="MHE11">MHE11</option>
+    </select>
+    <button onclick="loadReport()">Apply Filters</button>
+    <button onclick="exportToExcel()">Export Excel</button>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs,query,where  } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>MHE</th>
+        <th>Driver</th>
+        <th>Action</th>
+        <th>Timestamp</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBx_26h3CD_fRCILcmWLuDUc8v8pzH8Sxo",
-      authDomain: "mhe-checksheet.firebaseapp.com",
-      projectId: "mhe-checksheet",
-      storageBucket: "mhe-checksheet.appspot.com",
-      messagingSenderId: "413824836416",
-      appId: "1:413824836416:web:63faa90294e161363510a5",
-      measurementId: "G-ZQ77KHXXVB"
-    };
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyBx_26h3CD_fRCILcmWLuDUc8v8pzH8Sxo",
+    authDomain: "mhe-checksheet.firebaseapp.com",
+    projectId: "mhe-checksheet",
+    storageBucket: "mhe-checksheet.appspot.com",
+    messagingSenderId: "413824836416",
+    appId: "1:413824836416:web:63faa90294e161363510a5",
+    measurementId: "G-ZQ77KHXXVB"
+  };
 
-    // Populate driver dropdown from Firestore "drivers" collection
-    async function loadDrivers() {
-      const driverSelect = document.getElementById("driverSelect");
-      driverSelect.innerHTML = '<option value="">-- Select Driver --</option>';
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-      try {
-        const querySnapshot = await getDocs(collection(db, "drivers"));
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          const option = document.createElement("option");
-          option.value = data.name || data.id;
-          option.textContent = `${data.name || data.id} (${data.license || "No License"})`;
-          driverSelect.appendChild(option);
-        });
-      } catch (err) {
-        console.error("Error loading drivers:", err);
-      }
+  const SUPERVISOR_PIN = "1234"; // change this
+
+  // ✅ Supervisor PIN check
+  function checkAccess() {
+    const entered = prompt("Enter Supervisor PIN:");
+    if (entered === SUPERVISOR_PIN) {
+      document.getElementById("secureContent").style.display = "block";
+      document.getElementById("reportSection").style.display = "block";
+      loadDrivers();
+      loadReport();
+    } else {
+      document.body.innerHTML = "<h2 style='color:red;text-align:center'>❌ Access Denied</h2>";
     }
+  }
+  window.onload = checkAccess;
 
-    // Call once page loads
-    loadDrivers();
+  // 🔹 Load drivers
+  async function loadDrivers() {
+    const driverSelect = document.getElementById("driverSelect");
+    driverSelect.innerHTML = '<option value="">-- Select Driver --</option>';
 
-   
-async function assignKeyToDriver() {
-  const driver = document.getElementById("driverSelect").value;
-  const mhe = document.getElementById("mheSelectKey").value;
-  if (!driver || !mhe) {
-    alert("Driver and MHE required");
-    return;
+    try {
+      const snapshot = await getDocs(collection(db, "drivers"));
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const option = document.createElement("option");
+        option.value = data.name || data.id;
+        option.textContent = `${data.name || data.id} (${data.license || "No License"})`;
+        driverSelect.appendChild(option);
+      });
+    } catch(err) { console.error("Error loading drivers:", err); }
   }
 
-  const assignmentRef = doc(db, "assignments", mhe);
+  // 🔹 Assign key
+  async function assignKeyToDriver() {
+    const driver = document.getElementById("driverSelect").value;
+    const mhe = document.getElementById("mheSelectKey").value;
+    if (!driver || !mhe) { alert("Driver and MHE required"); return; }
 
-  try {
-    // 1️⃣ Check if driver is already assigned somewhere
-    const q = query(collection(db, "assignments"), where("driver", "==", driver), where("active", "==", true));
-    const snapshot = await getDocs(q);
+    const assignmentRef = doc(db, "assignments", mhe);
 
-    if (!snapshot.empty) {
-      alert(`❌ Driver ${driver} is already assigned to another MHE.`);
-      return;
-    }
+    try {
+      const q = query(collection(db, "assignments"), where("driver","==",driver), where("active","==",true));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) { alert(`❌ Driver ${driver} is already assigned.`); return; }
 
-    // 2️⃣ Check if this MHE is already assigned
-    const snap = await getDoc(assignmentRef);
-    if (snap.exists() && snap.data().active) {
-      alert(`❌ MHE ${mhe} is already assigned to ${snap.data().driver}`);
-      return;
-    }
+      const snap = await getDoc(assignmentRef);
+      if (snap.exists() && snap.data().active) { alert(`❌ MHE ${mhe} is already assigned to ${snap.data().driver}`); return; }
 
-    // 3️⃣ Assign driver to MHE
-    await setDoc(assignmentRef, {
-      driver,
-      mhe,
-      assignedAt: new Date().toISOString(),
-      active: true
-    });
+      await setDoc(assignmentRef, { driver, mhe, assignedAt: new Date().toISOString(), active: true });
 
-    alert(`✅ Assigned ${driver} to ${mhe}`);
-  } catch (err) {
-    console.error("Error assigning MHE:", err);
-    alert("❌ Error assigning MHE. Check console for details.");
+      await addDoc(collection(db, "history"), { driver, mhe, action: "assigned", timestamp: new Date().toISOString() });
+
+      alert(`✅ Assigned ${driver} to ${mhe}`);
+      loadReport();
+    } catch(err) { console.error(err); alert("❌ Error assigning MHE. Check console."); }
   }
-}
 
-    async function returnKey() {
-      const mhe = document.getElementById("mheSelectKey").value;
-      if(!mhe){
-        alert("Please select an MHE to return.");
-        return;
-      }
+  // 🔹 Return key
+  async function returnKey() {
+    const mhe = document.getElementById("mheSelectKey").value;
+    if (!mhe) { alert("Please select an MHE"); return; }
 
-      const assignmentRef = doc(db, "assignments", mhe);
+    const assignmentRef = doc(db, "assignments", mhe);
 
-      try {
-        const snap = await getDoc(assignmentRef);
-        if(!snap.exists() || !snap.data().active){
-          alert(`⚠️ MHE ${mhe} is not currently assigned.`);
-          return;
-        }
+    try {
+      const snap = await getDoc(assignmentRef);
+      if (!snap.exists() || !snap.data().active) { alert(`⚠️ MHE ${mhe} not currently assigned.`); return; }
 
-        await updateDoc(assignmentRef, {
-          active: false,
-          returnedAt: new Date().toISOString()
-        });
+      await updateDoc(assignmentRef, { active: false, returnedAt: new Date().toISOString() });
 
-        alert(`✅ Key for ${mhe} returned successfully`);
-      } catch(err){
-        console.error("Error returning key:", err);
-        alert("❌ Error returning key. Check console for details.");
-      }
-    }
+      await addDoc(collection(db, "history"), { driver: snap.data().driver, mhe, action: "returned", timestamp: new Date().toISOString() });
 
-    window.assignKeyToDriver = assignKeyToDriver;
-    window.returnKey = returnKey;
-  </script>
+      alert(`✅ Key for ${mhe} returned`);
+      loadReport();
+    } catch(err) { console.error(err); alert("❌ Error returning MHE."); }
+  }
+
+  // 🔹 Load report
+  async function loadReport() {
+    const tbody = document.querySelector("#reportTable tbody");
+    tbody.innerHTML = "";
+
+    const dateFilter = document.getElementById("reportDate").value;
+    const mheFilter = document.getElementById("mheFilter").value;
+    const driverFilter = document.getElementById("driverFilter").value.toLowerCase();
+
+    try {
+      const q = query(collection(db, "history"), orderBy("timestamp","asc"));
+      const snapshot = await getDocs(q);
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const docDate = data.timestamp.split("T")[0];
+
+        if ((dateFilter && docDate !== dateFilter) ||
+            (mheFilter && data.mhe !== mheFilter) ||
+            (driverFilter && !data.driver.toLowerCase().includes(driverFilter))) return;
+
+        const status = data.action === "assigned" ? "Active" : "Returned";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${data.mhe}</td><td>${data.driver}</td><td>${data.action}</td><td>${new Date(data.timestamp).toLocaleString()}</td><td>${status}</td>`;
+        tbody.appendChild(tr);
+      });
+    } catch(err) { console.error("Error loading report:", err); }
+  }
+
+  // 🔹 Export Excel
+  function exportToExcel() {
+    const table = document.getElementById("reportTable");
+    const wb = XLSX.utils.table_to_book(table, { sheet: "MHE Report" });
+    XLSX.writeFile(wb, `MHE_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+  }
+
+  window.assignKeyToDriver = assignKeyToDriver;
+  window.returnKey = returnKey;
+  window.loadReport = loadReport;
+  window.exportToExcel = exportToExcel;
+
+</script>
 </body>
 </html>
- 
