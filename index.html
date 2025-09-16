@@ -140,30 +140,51 @@
     } catch(err) { console.error("Error loading drivers:", err); }
   }
 
-  // 🔹 Assign key
-  async function assignKeyToDriver() {
-    const driver = document.getElementById("driverSelect").value;
-    const mhe = document.getElementById("mheSelectKey").value;
-    if (!driver || !mhe) { alert("Driver and MHE required"); return; }
+// 🔹 Assign key (with PIN check)
+async function assignKeyToDriver() {
+  const driver = document.getElementById("driverSelect").value;
+  const mhe = document.getElementById("mheSelectKey").value;
+  if (!driver || !mhe) { alert("Driver and MHE required"); return; }
+
+  // 👉 Ask for driver PIN
+  const enteredPin = prompt(`Enter PIN for ${driver}:`);
+  if (!enteredPin) { alert("PIN required"); return; }
+
+  try {
+    // ✅ Verify driver + PIN from Firestore
+    const driverQuery = query(
+      collection(db, "drivers"),
+      where("name", "==", driver),
+      where("pin", "==", enteredPin)
+    );
+    const driverSnap = await getDocs(driverQuery);
+    if (driverSnap.empty) {
+      alert("❌ Invalid PIN. Assignment denied.");
+      return;
+    }
 
     const assignmentRef = doc(db, "assignments", mhe);
 
-    try {
-      const q = query(collection(db, "assignments"), where("driver","==",driver), where("active","==",true));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) { alert(`❌ Driver ${driver} is already assigned.`); return; }
+    // Prevent driver from having multiple MHEs
+    const q = query(collection(db, "assignments"), where("driver","==",driver), where("active","==",true));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) { alert(`❌ Driver ${driver} already has an active MHE.`); return; }
 
-      const snap = await getDoc(assignmentRef);
-      if (snap.exists() && snap.data().active) { alert(`❌ MHE ${mhe} is already assigned to ${snap.data().driver}`); return; }
+    // Prevent multiple drivers for same MHE
+    const snap = await getDoc(assignmentRef);
+    if (snap.exists() && snap.data().active) { alert(`❌ ${mhe} is already assigned to ${snap.data().driver}`); return; }
 
-      await setDoc(assignmentRef, { driver, mhe, assignedAt: new Date().toISOString(), active: true });
+    // Assign MHE
+    await setDoc(assignmentRef, { driver, mhe, assignedAt: new Date().toISOString(), active: true });
 
-      await addDoc(collection(db, "history"), { driver, mhe, action: "assigned", timestamp: new Date().toISOString() });
+    // Log history
+    await addDoc(collection(db, "history"), { driver, mhe, action: "assigned", timestamp: new Date().toISOString() });
 
-      alert(`✅ Assigned ${driver} to ${mhe}`);
-      loadReport();
-    } catch(err) { console.error(err); alert("❌ Error assigning MHE. Check console."); }
-  }
+    alert(`✅ Assigned ${driver} to ${mhe}`);
+    loadReport();
+  } catch(err) { console.error(err); alert("❌ Error assigning MHE. Check console."); }
+}
+
 
   // 🔹 Return key
   async function returnKey() {
