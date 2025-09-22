@@ -288,7 +288,7 @@ let donutChart, barChart, lineChart;
 async function loadDashboard() {
   // --- Fetch assignments (current status) ---
   const snapshot = await getDocs(collection(db, "assignments"));
-  let occupied = 0, free = 0;
+  let occupied = 0;
   const active = [];
 
   snapshot.forEach(doc => {
@@ -296,8 +296,6 @@ async function loadDashboard() {
     if (data.active) {
       occupied++;
       active.push(`${data.mhe} → ${data.driver}`);
-    } else {
-      free++;
     }
 
     // disable occupied MHEs in dropdown
@@ -308,6 +306,9 @@ async function loadDashboard() {
   // --- Get total MHE count from dropdown ---
   const dropdown = document.getElementById("mheSelectKey");
   const total = dropdown ? dropdown.options.length : 0;
+
+  // --- Derive free from total - occupied ---
+  const free = total - occupied;
 
   // --- Update stat cards ---
   document.getElementById("totalMhe").textContent = total;
@@ -370,6 +371,7 @@ async function loadDashboard() {
     options: { scales: { x: { title: { display: true, text: "Hour of Day" } } } }
   });
 }
+
 
 
   async function loadReport() {
