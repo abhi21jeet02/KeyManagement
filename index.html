@@ -1,37 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>MHE Key Assignment & Report</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    body { font-family:'Inter',sans-serif; background:#111827; color:#f3f4f6; padding:20px; }
-    h2 { text-align:center; color:#3b82f6; }
-    .card { background: rgba(255,255,255,0.05); border-radius: 20px; padding:20px; margin:20px auto; max-width:420px; }
-    label { display:block; margin-top:10px; }
-    input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:10px; border:none; font-size:15px; }
-    button { background:#3b82f6; color:#fff; cursor:pointer; }
-    .secondary { background:#ef4444; }
-    table { width:100%; border-collapse: collapse; margin-top:20px; }
-    th, td { border:1px solid #444; padding:8px; text-align:center; }
-    th { background:#1f2937; }
-    .filters { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-  </style>
+<meta charset="UTF-8">
+<title>MHE Management Home</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body { font-family:'Inter',sans-serif; background:#111827; color:#f3f4f6; padding:20px; }
+  h2 { text-align:center; color:#3b82f6; margin-bottom:30px; }
+  .home-buttons { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom:30px; }
+  .home-buttons button { padding:20px 40px; font-size:18px; border-radius:12px; border:none; cursor:pointer; background:#3b82f6; color:white; }
+  .card { background: rgba(255,255,255,0.05); border-radius: 20px; padding:20px; margin:20px auto; max-width:900px; display:none; }
+  label { display:block; margin-top:10px; }
+  input, select, button.action { width:100%; padding:10px; margin:8px 0; border-radius:10px; border:none; font-size:15px; }
+  button.action { background:#3b82f6; color:#fff; cursor:pointer; }
+  button.secondary { background:#ef4444; }
+  table { width:100%; border-collapse: collapse; margin-top:20px; }
+  th, td { border:1px solid #444; padding:8px; text-align:center; }
+  th { background:#1f2937; }
+  .filters { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .status-free { color:#22c55e; font-weight:bold; }
+  .status-occupied { color:#ef4444; font-weight:bold; }
+  .searchable { width:100%; padding:8px; margin-bottom:8px; }
+  .flex-row { display:flex; gap:20px; flex-wrap:wrap; }
+  .chart-container { background:#1f2937; padding:10px; border-radius:10px; margin-top:20px; flex:1; min-width:300px; }
+</style>
 </head>
 <body>
 
-<h2>MHE Key Assignment & Report</h2>
+<h2>MHE Management System</h2>
 
-<div class="card" id="secureContent" style="display:none;">
-  <h3>Assign / Return MHE Key</h3>
+<!-- ===== Home Buttons ===== -->
+<div class="home-buttons" id="homeButtons">
+  <button onclick="openSection('takeKeysCard')">Take Keys</button>
+  <button onclick="openSection('dashboardCard')">Live Dashboard</button>
+  <button onclick="openSection('historyCard')">Assignment History</button>
+</div>
+
+<!-- ===== Take Keys Card ===== -->
+<div class="card" id="takeKeysCard">
+  <h3>Take Keys</h3>
   <label>Driver Name / ID:
-    <select id="driverSelect">
-      <option value="">-- Select Driver --</option>
-    </select>
+    <input type="text" id="driverSearch" class="searchable" placeholder="Search driver...">
+    <select id="driverSelect"></select>
   </label>
 
   <label>Select MHE Key:
+    <input type="text" id="mheSearch" class="searchable" placeholder="Search MHE...">
     <select id="mheSelectKey">
       <option value="">-- Select MHE --</option>
       <option value="MHE1">MHE1</option>
@@ -48,48 +63,126 @@
     </select>
   </label>
 
-  <button onclick="assignKeyToDriver()">Assign Me</button>
+  <button class="action" onclick="assignKeyToDriver()">Assign Me</button>
   <button class="secondary" onclick="returnKey()">Return Key</button>
 </div>
 
-<div class="card" id="reportSection" style="display:none;">
-  <h3>MHE Assignment History</h3>
-  <div class="filters">
-    <input type="date" id="reportDate">
-    <input type="text" id="driverFilter" placeholder="Filter by driver">
-    <select id="mheFilter">
-      <option value="">All MHEs</option>
-      <option value="MHE1">MHE1</option>
-      <option value="MHE2">MHE2</option>
-      <option value="MHE3">MHE3</option>
-      <option value="MHE4">MHE4</option>
-      <option value="MHE5">MHE5</option>
-      <option value="MHE6">MHE6</option>
-      <option value="MHE7">MHE7</option>
-      <option value="MHE8">MHE8</option>
-      <option value="MHE9">MHE9</option>
-      <option value="MHE10">MHE10</option>
-      <option value="MHE11">MHE11</option>
-    </select>
-    <button onclick="loadReport()">Apply Filters</button>
-    <button onclick="exportToExcel()">Export Excel</button>
+<!-- ===== Dashboard Card ===== -->
+<div class="card" id="dashboardCard">
+  <h3>📊 Live Dashboard</h3>
+
+  <!-- Stat Cards -->
+  <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
+    <div style="flex:1; min-width:150px; background:#1f2937; padding:15px; border-radius:12px; text-align:center;">
+      <h4>Total MHE</h4>
+      <p id="totalMhe" style="font-size:24px; font-weight:bold; color:#3b82f6;">0</p>
+    </div>
+    <div style="flex:1; min-width:150px; background:#1f2937; padding:15px; border-radius:12px; text-align:center;">
+      <h4>Free</h4>
+      <p id="freeMhe" style="font-size:24px; font-weight:bold; color:#22c55e;">0</p>
+    </div>
+    <div style="flex:1; min-width:150px; background:#1f2937; padding:15px; border-radius:12px; text-align:center;">
+      <h4>Occupied</h4>
+      <p id="occupiedMhe" style="font-size:24px; font-weight:bold; color:#ef4444;">0</p>
+    </div>
   </div>
 
-  <table id="reportTable">
-    <thead>
-      <tr>
-        <th>MHE</th>
-        <th>Driver</th>
-        <th>Action</th>
-        <th>Timestamp</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <!-- Charts -->
+  <div style="display:flex; flex-wrap:wrap; gap:20px;">
+    <div class="chart-container">
+      <canvas id="donutChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-container">
+    <canvas id="lineChart"></canvas>
+  </div>
+
+  <!-- Active Assignments -->
+  <h4>Active Assignments</h4>
+  <ul id="activeAssignments"></ul>
 </div>
 
+
+<!-- ===== History & Report Card ===== -->
+<div class="card" id="historyCard">
+  <h3 style="display:flex; justify-content:space-between; align-items:center;">
+    MHE Assignment History
+    <button onclick="toggleHistory()" style="background:#6b7280; color:white; padding:4px 10px; border-radius:6px; border:none; cursor:pointer;">
+      Hide
+    </button>
+  </h3>
+  <div id="historyContent" style="display:none;">
+    <div class="filters">
+      <input type="date" id="reportDate">
+      <input type="text" id="driverFilter" placeholder="Filter by driver">
+      <select id="mheFilter">
+        <option value="">All MHEs</option>
+        <option value="MHE1">MHE1</option>
+        <option value="MHE2">MHE2</option>
+        <option value="MHE3">MHE3</option>
+        <option value="MHE4">MHE4</option>
+        <option value="MHE5">MHE5</option>
+        <option value="MHE6">MHE6</option>
+        <option value="MHE7">MHE7</option>
+        <option value="MHE8">MHE8</option>
+        <option value="MHE9">MHE9</option>
+        <option value="MHE10">MHE10</option>
+        <option value="MHE11">MHE11</option>
+      </select>
+      <button onclick="loadReport()">Apply Filters</button>
+      <button onclick="exportToExcel()">Export Excel</button>
+    </div>
+
+    <table id="reportTable">
+      <thead>
+        <tr>
+          <th>MHE</th>
+          <th>Driver</th>
+          <th>Action</th>
+          <th>Timestamp</th>
+          <th>Status</th>
+          <th>Shift</th>
+          <th>Duration (min)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="flex-row">
+      <div class="chart-container">
+        <canvas id="usageChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="timelineChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openSection(id){
+  // hide all cards
+  document.querySelectorAll(".card").forEach(c=>c.style.display="none");
+  // show the selected card
+  document.getElementById(id).style.display="block";
+}
+function toggleHistory() {
+  const content = document.getElementById("historyContent");
+  const btn = event.target;
+  if (content.style.display === "none") {
+    content.style.display = "block";
+    btn.textContent = "Hide";
+  } else {
+    content.style.display = "none";
+    btn.textContent = "Show";
+  }
+}
+</script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
   import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
@@ -107,27 +200,24 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const SUPERVISOR_PIN = "1234"; // change this
+  const SUPERVISOR_PIN = "1234";
 
-  // ✅ Supervisor PIN check
   function checkAccess() {
-    const entered = prompt("Enter Supervisor PIN:");
-    if (entered === SUPERVISOR_PIN) {
-      document.getElementById("secureContent").style.display = "block";
-      document.getElementById("reportSection").style.display = "block";
-      loadDrivers();
-      loadReport();
-    } else {
-      document.body.innerHTML = "<h2 style='color:red;text-align:center'>❌ Access Denied</h2>";
-    }
+  const entered = prompt("Enter Supervisor PIN:");
+  if (entered === SUPERVISOR_PIN) {
+    loadDrivers();
+    loadReport();
+    loadDashboard();
+  } else {
+    document.body.innerHTML = "<h2 style='color:red;text-align:center'>❌ Access Denied</h2>";
   }
-  window.onload = checkAccess;
+}
+window.onload = checkAccess;
 
-  // 🔹 Load drivers
+
   async function loadDrivers() {
     const driverSelect = document.getElementById("driverSelect");
     driverSelect.innerHTML = '<option value="">-- Select Driver --</option>';
-
     try {
       const snapshot = await getDocs(collection(db, "drivers"));
       snapshot.forEach(docSnap => {
@@ -140,114 +230,264 @@
     } catch(err) { console.error("Error loading drivers:", err); }
   }
 
-// 🔹 Assign key (with PIN check)
-async function assignKeyToDriver() {
-  const driver = document.getElementById("driverSelect").value;
-  const mhe = document.getElementById("mheSelectKey").value;
-  if (!driver || !mhe) { alert("Driver and MHE required"); return; }
-
-  // 👉 Ask for driver PIN
-  const enteredPin = prompt(`Enter PIN for ${driver}:`);
-  if (!enteredPin) { alert("PIN required"); return; }
-
-  try {
-    // ✅ Verify driver + PIN from Firestore
-    const driverQuery = query(
-      collection(db, "drivers"),
-      where("name", "==", driver),
-      where("pin", "==", enteredPin)
-    );
-    const driverSnap = await getDocs(driverQuery);
-    if (driverSnap.empty) {
-      alert("❌ Invalid PIN. Assignment denied.");
-      return;
-    }
-
-    const assignmentRef = doc(db, "assignments", mhe);
-
-    // Prevent driver from having multiple MHEs
-    const q = query(collection(db, "assignments"), where("driver","==",driver), where("active","==",true));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) { alert(`❌ Driver ${driver} already has an active MHE.`); return; }
-
-    // Prevent multiple drivers for same MHE
-    const snap = await getDoc(assignmentRef);
-    if (snap.exists() && snap.data().active) { alert(`❌ ${mhe} is already assigned to ${snap.data().driver}`); return; }
-
-    // Assign MHE
-    await setDoc(assignmentRef, { driver, mhe, assignedAt: new Date().toISOString(), active: true });
-
-    // Log history
-    await addDoc(collection(db, "history"), { driver, mhe, action: "assigned", timestamp: new Date().toISOString() });
-
-    alert(`✅ Assigned ${driver} to ${mhe}`);
-    loadReport();
-  } catch(err) { console.error(err); alert("❌ Error assigning MHE. Check console."); }
-}
-
-
-  // 🔹 Return key
-  async function returnKey() {
+  async function assignKeyToDriver() {
+    const driver = document.getElementById("driverSelect").value;
     const mhe = document.getElementById("mheSelectKey").value;
-    if (!mhe) { alert("Please select an MHE"); return; }
+    if (!driver || !mhe) { alert("Driver and MHE required"); return; }
 
-    const assignmentRef = doc(db, "assignments", mhe);
+    const enteredPin = prompt(`Enter PIN for ${driver}:`);
+    if (!enteredPin) { alert("PIN required"); return; }
 
     try {
+      const driverQuery = query(collection(db,"drivers"), where("name","==",driver), where("pin","==",enteredPin));
+      const driverSnap = await getDocs(driverQuery);
+      if (driverSnap.empty) { alert("❌ Invalid PIN."); return; }
+
+      const assignmentRef = doc(db,"assignments",mhe);
+
+      const q = query(collection(db,"assignments"), where("driver","==",driver), where("active","==",true));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) { alert(`❌ Driver ${driver} already has an active MHE.`); return; }
+
       const snap = await getDoc(assignmentRef);
-      if (!snap.exists() || !snap.data().active) { alert(`⚠️ MHE ${mhe} not currently assigned.`); return; }
+      if (snap.exists() && snap.data().active) { alert(`❌ ${mhe} already in use.`); return; }
 
-      await updateDoc(assignmentRef, { active: false, returnedAt: new Date().toISOString() });
+      await setDoc(assignmentRef,{ driver,mhe,assignedAt:new Date().toISOString(),active:true });
 
-      await addDoc(collection(db, "history"), { driver: snap.data().driver, mhe, action: "returned", timestamp: new Date().toISOString() });
+      await addDoc(collection(db,"history"),{ driver,mhe,action:"assigned",timestamp:new Date().toISOString() });
+
+      alert(`✅ Assigned ${driver} to ${mhe}`);
+      loadReport();
+      loadDashboard();
+    } catch(err){ console.error(err); alert("❌ Error assigning MHE."); }
+  }
+  window.assignKeyToDriver = assignKeyToDriver;
+
+  async function returnKey(mhe=null) {
+    mhe = mhe || document.getElementById("mheSelectKey").value;
+    if (!mhe) { alert("Please select an MHE"); return; }
+
+    const assignmentRef = doc(db,"assignments",mhe);
+    try {
+      const snap = await getDoc(assignmentRef);
+      if (!snap.exists() || !snap.data().active) { alert(`⚠️ MHE ${mhe} not in use.`); return; }
+
+      await updateDoc(assignmentRef,{ active:false, returnedAt:new Date().toISOString() });
+
+      await addDoc(collection(db,"history"),{ driver:snap.data().driver, mhe, action:"returned", timestamp:new Date().toISOString() });
 
       alert(`✅ Key for ${mhe} returned`);
       loadReport();
-    } catch(err) { console.error(err); alert("❌ Error returning MHE."); }
+      loadDashboard();
+    } catch(err){ console.error(err); alert("❌ Error returning."); }
   }
-
-  // 🔹 Load report
-  async function loadReport() {
-    const tbody = document.querySelector("#reportTable tbody");
-    tbody.innerHTML = "";
-
-    const dateFilter = document.getElementById("reportDate").value;
-    const mheFilter = document.getElementById("mheFilter").value;
-    const driverFilter = document.getElementById("driverFilter").value.toLowerCase();
-
-    try {
-      const q = query(collection(db, "history"), orderBy("timestamp","asc"));
-      const snapshot = await getDocs(q);
-
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const docDate = data.timestamp.split("T")[0];
-
-        if ((dateFilter && docDate !== dateFilter) ||
-            (mheFilter && data.mhe !== mheFilter) ||
-            (driverFilter && !data.driver.toLowerCase().includes(driverFilter))) return;
-
-        const status = data.action === "assigned" ? "Active" : "Returned";
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${data.mhe}</td><td>${data.driver}</td><td>${data.action}</td><td>${new Date(data.timestamp).toLocaleString()}</td><td>${status}</td>`;
-        tbody.appendChild(tr);
-      });
-    } catch(err) { console.error("Error loading report:", err); }
-  }
-
-  // 🔹 Export Excel
-  function exportToExcel() {
-    const table = document.getElementById("reportTable");
-    const wb = XLSX.utils.table_to_book(table, { sheet: "MHE Report" });
-    XLSX.writeFile(wb, `MHE_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
-  }
-
-  window.assignKeyToDriver = assignKeyToDriver;
   window.returnKey = returnKey;
-  window.loadReport = loadReport;
-  window.exportToExcel = exportToExcel;
 
+let donutChart, barChart, lineChart;
+
+async function loadDashboard() {
+  // --- Fetch assignments (current status) ---
+  const snapshot = await getDocs(collection(db, "assignments"));
+  let occupied = 0, free = 0;
+  const active = [];
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.active) {
+      occupied++;
+      active.push(`${data.mhe} → ${data.driver}`);
+    } else {
+      free++;
+    }
+
+    // disable occupied MHEs in dropdown
+    const option = document.querySelector(`#mheSelectKey option[value='${data.mhe}']`);
+    if (option) option.disabled = data.active;
+  });
+
+  // --- Get total MHE count from dropdown ---
+  const dropdown = document.getElementById("mheSelectKey");
+  const total = dropdown ? dropdown.options.length : 0;
+
+  // --- Update stat cards ---
+  document.getElementById("totalMhe").textContent = total;
+  document.getElementById("freeMhe").textContent = free;
+  document.getElementById("occupiedMhe").textContent = occupied;
+
+  // --- Update active list ---
+  const activeList = document.getElementById("activeAssignments");
+  activeList.innerHTML = active.length
+    ? active.map(a => `<li>${a}</li>`).join("")
+    : "<li>None</li>";
+
+  // --- Donut Chart (Free vs Occupied) ---
+  const donutData = {
+    labels: ["Free", "Occupied"],
+    datasets: [{ data: [free, occupied], backgroundColor: ["#22c55e", "#ef4444"] }]
+  };
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById("donutChart"), {
+    type: "doughnut",
+    data: donutData,
+    options: { plugins: { legend: { position: "bottom" } } }
+  });
+
+  // --- Fetch usage history for charts ---
+  const histSnap = await getDocs(collection(db, "history"));
+  const usageCount = {}; // per MHE usage
+  const timeline = {};   // per hour usage
+
+  histSnap.forEach(doc => {
+    const h = doc.data();
+    usageCount[h.mhe] = (usageCount[h.mhe] || 0) + 1;
+
+    const ts = h.timestamp?.toDate?.() || new Date();
+    const hour = ts.getHours();
+    timeline[hour] = (timeline[hour] || 0) + 1;
+  });
+
+  // --- Bar Chart (usage per MHE) ---
+  const barData = {
+    labels: Object.keys(usageCount),
+    datasets: [{ label: "Assignments", data: Object.values(usageCount), backgroundColor: "#3b82f6" }]
+  };
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById("barChart"), {
+    type: "bar",
+    data: barData,
+    options: { plugins: { legend: { display: false } } }
+  });
+
+  // --- Line Chart (assignments trend by hour) ---
+  const lineData = {
+    labels: Object.keys(timeline),
+    datasets: [{ label: "Assignments", data: Object.values(timeline), borderColor: "#facc15", fill: false }]
+  };
+  if (lineChart) lineChart.destroy();
+  lineChart = new Chart(document.getElementById("lineChart"), {
+    type: "line",
+    data: lineData,
+    options: { scales: { x: { title: { display: true, text: "Hour of Day" } } } }
+  });
+}
+
+
+  async function loadReport() {
+    const tbody=document.querySelector("#reportTable tbody");
+    tbody.innerHTML="";
+    const dateFilter=document.getElementById("reportDate").value;
+    const mheFilter=document.getElementById("mheFilter").value;
+    const driverFilter=document.getElementById("driverFilter").value.toLowerCase();
+
+    const q=query(collection(db,"history"),orderBy("timestamp","asc"));
+    const snapshot=await getDocs(q);
+    let usageCount={}, timeline={};
+    snapshot.forEach(docSnap=>{
+      const data=docSnap.data();
+      const docDate=data.timestamp.split("T")[0];
+      if((dateFilter&&docDate!==dateFilter)||(mheFilter&&data.mhe!==mheFilter)||(driverFilter&&!data.driver.toLowerCase().includes(driverFilter))) return;
+
+      const shift=new Date(data.timestamp).getHours()<15?"Morning":"Night";
+      let duration="";
+      if(data.action==="returned"&&data.returnedAt){ duration=Math.round((new Date(data.returnedAt)-new Date(data.assignedAt))/60000); }
+
+      const status=data.action==="assigned"?"Active":"Returned";
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${data.mhe}</td><td>${data.driver}</td><td>${data.action}</td><td>${new Date(data.timestamp).toLocaleString()}</td><td>${status}</td><td>${shift}</td><td>${duration||"-"}</td>`;
+      tbody.appendChild(tr);
+
+      usageCount[data.mhe]=(usageCount[data.mhe]||0)+1;
+      const hour=new Date(data.timestamp).getHours();
+      timeline[hour]=(timeline[hour]||0)+1;
+    });
+    drawCharts(usageCount,timeline);
+  }
+  window.loadReport=loadReport;
+
+ async function exportToExcel() {
+  const snapshot = await getDocs(query(collection(db, "history"), orderBy("timestamp", "asc")));
+
+  const grouped = {}; // MHE → rows array
+  const pendingAssignments = {}; // temporary storage to pair assigned → returned
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (!grouped[data.mhe]) grouped[data.mhe] = [];
+
+    const key = `${data.driver}_${data.mhe}`;
+    const assignDate = new Date(data.timestamp);
+    const hrs = assignDate.getHours();
+    const mins = assignDate.getMinutes();
+    const totalMins = hrs * 60 + mins;
+    const shift = (totalMins >= 7 * 60 + 30 && totalMins <= 16 * 60) ? "Morning" : "Night";
+
+    if (data.action === "assigned") {
+      // store assigned temporarily
+      pendingAssignments[key] = {
+        Date: assignDate.toLocaleDateString(),
+        Driver: data.driver,
+        "Assign Time": assignDate.toLocaleString(),
+        "Return Time": "",
+        Duration: "-",
+        Shift: shift
+      };
+    } else if (data.action === "returned" && pendingAssignments[key]) {
+      const assigned = pendingAssignments[key];
+      const returnTime = assignDate;
+      const diffMs = returnTime - new Date(assigned["Assign Time"]);
+      const minsUsed = Math.floor(diffMs / 60000);
+      const h = Math.floor(minsUsed / 60);
+      const m = minsUsed % 60;
+
+      assigned["Return Time"] = returnTime.toLocaleString();
+      assigned["Duration"] = `${h}h ${m}m`;
+
+      grouped[data.mhe].push(assigned);
+      delete pendingAssignments[key]; // remove after pairing
+    }
+  });
+
+  // Add unreturned assignments (optional)
+  Object.values(pendingAssignments).forEach(val => {
+    grouped[val.Driver + "_" + val.MHE] = val;
+    grouped[val.MHE].push(val);
+  });
+
+  const wb = XLSX.utils.book_new();
+  Object.keys(grouped).forEach(mhe => {
+    const ws = XLSX.utils.json_to_sheet(grouped[mhe]);
+    XLSX.utils.book_append_sheet(wb, ws, mhe);
+  });
+
+  XLSX.writeFile(wb, `MHE_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+}
+window.exportToExcel = exportToExcel;
+
+  function drawCharts(usageCount,timeline){
+    new Chart(document.getElementById("usageChart"),{
+      type:"bar",
+      data:{labels:Object.keys(usageCount),datasets:[{label:"MHE Usage Count",data:Object.values(usageCount)}]}
+    });
+    new Chart(document.getElementById("timelineChart"),{
+      type:"line",
+      data:{labels:Object.keys(timeline),datasets:[{label:"Usage by Hour",data:Object.values(timeline)}]}
+    });
+  }
+
+  // 🔎 Searchable dropdown filter
+  document.getElementById("driverSearch").addEventListener("input",()=>{
+    const filter=document.getElementById("driverSearch").value.toLowerCase();
+    Array.from(document.getElementById("driverSelect").options).forEach(opt=>{
+      opt.style.display=opt.textContent.toLowerCase().includes(filter)?"block":"none";
+    });
+  });
+  document.getElementById("mheSearch").addEventListener("input",()=>{
+    const filter=document.getElementById("mheSearch").value.toLowerCase();
+    Array.from(document.getElementById("mheSelectKey").options).forEach(opt=>{
+      opt.style.display=opt.textContent.toLowerCase().includes(filter)?"block":"none";
+    });
+  });
+  
 </script>
 </body>
 </html>
