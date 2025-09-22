@@ -87,18 +87,8 @@
     </div>
   </div>
 
-  <!-- Charts -->
-  <div style="display:flex; flex-wrap:wrap; gap:20px;">
-    <div class="chart-container">
-      <canvas id="donutChart"></canvas>
-    </div>
-    <div class="chart-container">
-      <canvas id="barChart"></canvas>
-    </div>
-  </div>
-  <div class="chart-container">
-    <canvas id="lineChart"></canvas>
-  </div>
+  <!-- MHE Cards Grid -->
+  <div id="mheGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px;"></div>
 
   <!-- Active Assignments -->
   <h4>Active Assignments</h4>
@@ -283,31 +273,28 @@ window.onload = checkAccess;
   }
   window.returnKey = returnKey;
 
-let donutChart, barChart, lineChart;
+let donutChart, barChart, lineChart, topDriversChart;
+
 
 async function loadDashboard() {
-  // --- Fetch assignments (current status) ---
   const snapshot = await getDocs(collection(db, "assignments"));
   let occupied = 0;
   const active = [];
+  const mheStatus = {}; // MHE → driver or null
 
   snapshot.forEach(doc => {
     const data = doc.data();
+    mheStatus[data.mhe] = data.active ? data.driver : null;
     if (data.active) {
       occupied++;
       active.push(`${data.mhe} → ${data.driver}`);
     }
-
-    // disable occupied MHEs in dropdown
-    const option = document.querySelector(`#mheSelectKey option[value='${data.mhe}']`);
-    if (option) option.disabled = data.active;
   });
 
   // --- Get total MHE count from dropdown ---
   const dropdown = document.getElementById("mheSelectKey");
-  const total = dropdown ? dropdown.options.length : 0;
+  const total = dropdown ? dropdown.options.length - 1 : 0; // ignore "--Select MHE--"
 
-  // --- Derive free from total - occupied ---
   const free = total - occupied;
 
   // --- Update stat cards ---
@@ -321,57 +308,28 @@ async function loadDashboard() {
     ? active.map(a => `<li>${a}</li>`).join("")
     : "<li>None</li>";
 
-  // --- Donut Chart (Free vs Occupied) ---
-  const donutData = {
-    labels: ["Free", "Occupied"],
-    datasets: [{ data: [free, occupied], backgroundColor: ["#22c55e", "#ef4444"] }]
-  };
-  if (donutChart) donutChart.destroy();
-  donutChart = new Chart(document.getElementById("donutChart"), {
-    type: "doughnut",
-    data: donutData,
-    options: { plugins: { legend: { position: "bottom" } } }
-  });
+  // --- Populate MHE cards grid ---
+  const mheGrid = document.getElementById("mheGrid");
+  mheGrid.innerHTML = ""; // clear previous
+  for (let i = 1; i <= total; i++) {
+    const mheName = `MHE${i}`;
+    const driver = mheStatus[mheName] || "Free";
+    const color = driver === "Free" ? "#22c55e" : "#ef4444";
 
-  // --- Fetch usage history for charts ---
-  const histSnap = await getDocs(collection(db, "history"));
-  const usageCount = {}; // per MHE usage
-  const timeline = {};   // per hour usage
+    const card = document.createElement("div");
+    card.style.background = "rgba(255,255,255,0.05)";
+    card.style.borderRadius = "12px";
+    card.style.padding = "15px";
+    card.style.textAlign = "center";
+    card.style.fontWeight = "bold";
 
-  histSnap.forEach(doc => {
-    const h = doc.data();
-    usageCount[h.mhe] = (usageCount[h.mhe] || 0) + 1;
-
-    const ts = h.timestamp?.toDate?.() || new Date();
-    const hour = ts.getHours();
-    timeline[hour] = (timeline[hour] || 0) + 1;
-  });
-
-  // --- Bar Chart (usage per MHE) ---
-  const barData = {
-    labels: Object.keys(usageCount),
-    datasets: [{ label: "Assignments", data: Object.values(usageCount), backgroundColor: "#3b82f6" }]
-  };
-  if (barChart) barChart.destroy();
-  barChart = new Chart(document.getElementById("barChart"), {
-    type: "bar",
-    data: barData,
-    options: { plugins: { legend: { display: false } } }
-  });
-
-  // --- Line Chart (assignments trend by hour) ---
-  const lineData = {
-    labels: Object.keys(timeline),
-    datasets: [{ label: "Assignments", data: Object.values(timeline), borderColor: "#facc15", fill: false }]
-  };
-  if (lineChart) lineChart.destroy();
-  lineChart = new Chart(document.getElementById("lineChart"), {
-    type: "line",
-    data: lineData,
-    options: { scales: { x: { title: { display: true, text: "Hour of Day" } } } }
-  });
+    card.innerHTML = `
+      <h4>${mheName}</h4>
+      <p style="color:${color}; font-size:16px;">${driver}</p>
+    `;
+    mheGrid.appendChild(card);
+  }
 }
-
 
 
   async function loadReport() {
