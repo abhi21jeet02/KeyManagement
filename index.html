@@ -2,42 +2,124 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MHE Management Home</title>
+<title>MHE Management Home - QR/Driver PIN Flow</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  body { font-family:'Inter',sans-serif; background:#111827; color:#f3f4f6; padding:20px; }
-  h2 { text-align:center; color:#3b82f6; margin-bottom:30px; }
-  .home-buttons { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom:30px; }
-  .home-buttons button { padding:20px 40px; font-size:18px; border-radius:12px; border:none; cursor:pointer; background:#3b82f6; color:white; }
-  .card { background: rgba(255,255,255,0.05); border-radius: 20px; padding:20px; margin:20px auto; max-width:900px; display:none; }
-  label { display:block; margin-top:10px; }
-  input, select, button.action { width:100%; padding:10px; margin:8px 0; border-radius:10px; border:none; font-size:15px; }
-  button.action { background:#3b82f6; color:#fff; cursor:pointer; }
-  button.secondary { background:#ef4444; }
-  table { width:100%; border-collapse: collapse; margin-top:20px; }
-  th, td { border:1px solid #444; padding:8px; text-align:center; }
-  th { background:#1f2937; }
-  .filters { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-  .status-free { color:#22c55e; font-weight:bold; }
-  .status-occupied { color:#ef4444; font-weight:bold; }
-  .searchable { width:100%; padding:8px; margin-bottom:8px; }
-  .flex-row { display:flex; gap:20px; flex-wrap:wrap; }
-  .chart-container { background:#1f2937; padding:10px; border-radius:10px; margin-top:20px; flex:1; min-width:300px; }
+/* --- Body & Background Animation --- */
+body { 
+  font-family:'Inter',sans-serif; 
+  background: linear-gradient(120deg,#111827,#1f2937,#111827);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  color:#f3f4f6; padding:20px; 
+}
+@keyframes gradientBG {
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
+
+/* --- Headings --- */
+h2 { 
+  text-align:center; color:#3b82f6; margin-bottom:30px; 
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+/* --- Smooth Card Transitions --- */
+.card {
+  background: rgba(255,255,255,0.05); 
+  border-radius: 20px; 
+  padding:20px; 
+  margin:20px auto; 
+  max-width:900px; 
+  display:none;
+  opacity:0;
+  transform: translateY(20px);
+  transition: all 0.5s ease-in-out;
+}
+.card.show { opacity:1; transform: translateY(0); }
+
+/* --- Buttons --- */
+button, button.action, button.secondary {
+  transition: all 0.3s ease-in-out;
+  border:none; cursor:pointer;
+}
+button:hover, button.action:hover, button.secondary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+}
+
+/* --- MHE Cards --- */
+.mhe-card {
+  background:rgba(255,255,255,0.03); 
+  border-radius:10px; 
+  padding:12px; 
+  text-align:center; 
+  cursor:pointer;
+  transition: all 0.3s ease-in-out;
+  opacity:0;
+  transform: translateY(20px);
+}
+.mhe-card.free:hover { 
+  transform: translateY(-5px) scale(1.05); 
+  background: rgba(34,197,94,0.15); 
+}
+.mhe-card.occupied:hover { 
+  transform: translateY(-2px);
+}
+.mhe-card.show { opacity:1; transform: translateY(0); }
+
+/* --- Dashboard Numbers Animation --- */
+.dashboard-number {
+  transition: all 0.5s ease;
+  transform: scale(1);
+}
+.dashboard-number.update {
+  transform: scale(1.2);
+  color: #facc15;
+}
+
+/* --- FadeIn Animation --- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+/* --- Smooth Table & Filters --- */
+.filters input, .filters select, .filters button {
+  transition: all 0.3s ease-in-out;
+}
+.filters input:focus, .filters select:focus, .filters button:focus {
+  outline:none; box-shadow:0 0 10px #3b82f6;
+}
+
+/* --- Hide/Show Animation --- */
+.hide { display:none !important; opacity:0; transition: opacity 0.5s ease; }
+.showSection { display:block !important; opacity:1; transition: opacity 0.5s ease; }
+
+/* --- Search Input Animation --- */
+.searchable { transition: all 0.3s ease-in-out; }
+.searchable:focus { transform: scale(1.02); box-shadow:0 0 8px #3b82f6; }
+
+/* --- Card Hover Pop --- */
+.card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+/* --- Table Hover --- */
+table tbody tr:hover { background: rgba(59,130,246,0.1); transition: all 0.3s ease-in-out; }
 </style>
 </head>
 <body>
 
 <h2>MHE Management System</h2>
 
-<!-- ===== Home Buttons ===== -->
 <div class="home-buttons" id="homeButtons">
   <button onclick="openSection('takeKeysCard')">Take Keys</button>
   <button onclick="openSection('dashboardCard')">Live Dashboard</button>
   <button onclick="openSection('historyCard')">Assignment History</button>
 </div>
 
-<!-- ===== Take Keys Card ===== -->
+<!-- Take Keys -->
 <div class="card" id="takeKeysCard">
   <h3>Take Keys</h3>
   <label>Driver Name / ID:
@@ -45,409 +127,329 @@
     <select id="driverSelect"></select>
   </label>
 
-  <label>Select MHE Key:
-    <input type="text" id="mheSearch" class="searchable" placeholder="Search MHE...">
-    <select id="mheSelectKey">
-      <option value="">-- Select MHE --</option>
-      <option value="MHE1">MHE1</option>
-      <option value="MHE2">MHE2</option>
-      <option value="MHE3">MHE3</option>
-      <option value="MHE4">MHE4</option>
-      <option value="MHE5">MHE5</option>
-      <option value="MHE6">MHE6</option>
-      <option value="MHE7">MHE7</option>
-      <option value="MHE8">MHE8</option>
-      <option value="MHE9">MHE9</option>
-      <option value="MHE10">MHE10</option>
-      <option value="MHE11">MHE11</option>
-    </select>
-  </label>
+  <label>Available MHEs (click to take):</label>
+  <div id="takeMheGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-top:10px;"></div>
 
-  <button class="action" onclick="assignKeyToDriver()">Assign Me</button>
-  <button class="secondary" onclick="returnKey()">Return Key</button>
+  <div style="margin-top:12px; display:flex; gap:10px;">
+    <button class="action" onclick="manualAssignFromSelect()">Assign Selected MHE</button>
+  </div>
 </div>
 
-<!-- ===== Dashboard Card ===== -->
+<!-- Dashboard -->
 <div class="card" id="dashboardCard">
   <h3>📊 Live Dashboard</h3>
-
-  <!-- Stat Cards -->
   <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
     <div style="flex:1; min-width:150px; background:#1f2937; padding:15px; border-radius:12px; text-align:center;">
-      <h4>Total MHE</h4>
-      <p id="totalMhe" style="font-size:24px; font-weight:bold; color:#3b82f6;">0</p>
+      <h4>Total MHE</h4><p id="totalMhe" class="dashboard-number" style="font-size:24px; font-weight:bold; color:#3b82f6;">0</p>
     </div>
     <div style="flex:1; min-width:150px; background:#1f2937; padding:15px; border-radius:12px; text-align:center;">
-      <h4>Free</h4>
-      <p id="freeMhe" style="font-size:24px; font-weight:bold; color:#22c55e;">0</p>
+      <h4>Free</h4><p id="freeMhe" class="dashboard-number" style="font-size:24px; font-weight:bold; color:#22c55e;">0</p>
     </div>
     <div style="flex:1; min-width:150px; background:#1f2937; padding:15px; border-radius:12px; text-align:center;">
-      <h4>Occupied</h4>
-      <p id="occupiedMhe" style="font-size:24px; font-weight:bold; color:#ef4444;">0</p>
+      <h4>Occupied</h4><p id="occupiedMhe" class="dashboard-number" style="font-size:24px; font-weight:bold; color:#ef4444;">0</p>
     </div>
   </div>
-
-  <!-- MHE Cards Grid -->
   <div id="mheGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px;"></div>
-
-  <!-- Active Assignments -->
   <h4>Active Assignments</h4>
   <ul id="activeAssignments"></ul>
 </div>
 
-
-<!-- ===== History & Report Card ===== -->
+<!-- History -->
 <div class="card" id="historyCard">
   <h3 style="display:flex; justify-content:space-between; align-items:center;">
     MHE Assignment History
-    <button onclick="toggleHistory()" style="background:#6b7280; color:white; padding:4px 10px; border-radius:6px; border:none; cursor:pointer;">
-      Hide
-    </button>
+    <button id="historyToggleBtn" onclick="toggleHistory()" style="background:#6b7280; color:white; padding:4px 10px; border-radius:6px; border:none; cursor:pointer;">Hide</button>
   </h3>
   <div id="historyContent" style="display:none;">
     <div class="filters">
       <input type="date" id="reportDate">
       <input type="text" id="driverFilter" placeholder="Filter by driver">
-      <select id="mheFilter">
-        <option value="">All MHEs</option>
-        <option value="MHE1">MHE1</option>
-        <option value="MHE2">MHE2</option>
-        <option value="MHE3">MHE3</option>
-        <option value="MHE4">MHE4</option>
-        <option value="MHE5">MHE5</option>
-        <option value="MHE6">MHE6</option>
-        <option value="MHE7">MHE7</option>
-        <option value="MHE8">MHE8</option>
-        <option value="MHE9">MHE9</option>
-        <option value="MHE10">MHE10</option>
-        <option value="MHE11">MHE11</option>
-      </select>
+      <select id="mheFilter"><option value="">All MHEs</option></select>
       <button onclick="loadReport()">Apply Filters</button>
       <button onclick="exportToExcel()">Export Excel</button>
     </div>
-
     <table id="reportTable">
       <thead>
         <tr>
-          <th>MHE</th>
-          <th>Driver</th>
-          <th>Action</th>
-          <th>Timestamp</th>
-          <th>Status</th>
-          <th>Shift</th>
-          <th>Duration (min)</th>
+          <th>MHE</th><th>Driver</th><th>Action</th><th>Timestamp</th><th>Status</th><th>Shift</th><th>Duration</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
-
     <div class="flex-row">
-      <div class="chart-container">
-        <canvas id="usageChart"></canvas>
-      </div>
-      <div class="chart-container">
-        <canvas id="timelineChart"></canvas>
-      </div>
+      <div class="chart-container"><canvas id="usageChart"></canvas></div>
+      <div class="chart-container"><canvas id="timelineChart"></canvas></div>
     </div>
   </div>
 </div>
 
 <script>
 function openSection(id){
-  // hide all cards
-  document.querySelectorAll(".card").forEach(c=>c.style.display="none");
-  // show the selected card
-  document.getElementById(id).style.display="block";
+  document.querySelectorAll(".card").forEach(c=>{ 
+    c.classList.remove("show"); 
+    c.style.display="none";
+  });
+  const card=document.getElementById(id);
+  card.style.display="block";
+  setTimeout(()=>card.classList.add("show"),10);
 }
 function toggleHistory() {
   const content = document.getElementById("historyContent");
-  const btn = event.target;
-  if (content.style.display === "none") {
-    content.style.display = "block";
-    btn.textContent = "Hide";
-  } else {
-    content.style.display = "none";
-    btn.textContent = "Show";
-  }
+  const btn = document.getElementById("historyToggleBtn");
+  if (content.style.display === "none") { content.style.display="block"; btn.textContent="Hide"; }
+  else { content.style.display="none"; btn.textContent="Show"; }
 }
 </script>
+
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBx_26h3CD_fRCILcmWLuDUc8v8pzH8Sxo",
-    authDomain: "mhe-checksheet.firebaseapp.com",
-    projectId: "mhe-checksheet",
-    storageBucket: "mhe-checksheet.appspot.com",
-    messagingSenderId: "413824836416",
-    appId: "1:413824836416:web:63faa90294e161363510a5",
-    measurementId: "G-ZQ77KHXXVB"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyBx_26h3CD_fRCILcmWLuDUc8v8pzH8Sxo",
+  authDomain: "mhe-checksheet.firebaseapp.com",
+  projectId: "mhe-checksheet",
+  storageBucket: "mhe-checksheet.appspot.com",
+  messagingSenderId: "413824836416",
+  appId: "1:413824836416:web:63faa90294e161363510a5",
+  measurementId: "G-ZQ77KHXXVB"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  const SUPERVISOR_PIN = "1234";
+const SUPERVISOR_PIN = "1234";
+let currentUser = null;
 
-  function checkAccess() {
-  const entered = prompt("Enter Supervisor PIN:");
-  if (entered === SUPERVISOR_PIN) {
-    loadDrivers();
-    loadReport();
-    loadDashboard();
-  } else {
-    document.body.innerHTML = "<h2 style='color:red;text-align:center'>❌ Access Denied</h2>";
-  }
-}
 window.onload = checkAccess;
 
-
-  async function loadDrivers() {
-    const driverSelect = document.getElementById("driverSelect");
-    driverSelect.innerHTML = '<option value="">-- Select Driver --</option>';
-    try {
-      const snapshot = await getDocs(collection(db, "drivers"));
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const option = document.createElement("option");
-        option.value = data.name || data.id;
-        option.textContent = `${data.name || data.id} (${data.license || "No License"})`;
-        driverSelect.appendChild(option);
-      });
-    } catch(err) { console.error("Error loading drivers:", err); }
+async function checkAccess(){
+  const pin = prompt("Enter PIN:");
+  if(!pin){ document.body.innerHTML="<h2 style='color:red;text-align:center'>❌ No PIN entered</h2>"; return; }
+  if(pin===SUPERVISOR_PIN){
+    await loadDrivers(); await loadReport(); await loadDashboard();
+    document.getElementById('homeButtons').style.display='flex';
+    openSection('dashboardCard'); return;
   }
-
-  async function assignKeyToDriver() {
-    const driver = document.getElementById("driverSelect").value;
-    const mhe = document.getElementById("mheSelectKey").value;
-    if (!driver || !mhe) { alert("Driver and MHE required"); return; }
-
-    const enteredPin = prompt(`Enter PIN for ${driver}:`);
-    if (!enteredPin) { alert("PIN required"); return; }
-
-    try {
-      const driverQuery = query(collection(db,"drivers"), where("name","==",driver), where("pin","==",enteredPin));
-      const driverSnap = await getDocs(driverQuery);
-      if (driverSnap.empty) { alert("❌ Invalid PIN."); return; }
-
-      const assignmentRef = doc(db,"assignments",mhe);
-
-      const q = query(collection(db,"assignments"), where("driver","==",driver), where("active","==",true));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) { alert(`❌ Driver ${driver} already has an active MHE.`); return; }
-
-      const snap = await getDoc(assignmentRef);
-      if (snap.exists() && snap.data().active) { alert(`❌ ${mhe} already in use.`); return; }
-
-      await setDoc(assignmentRef,{ driver,mhe,assignedAt:new Date().toISOString(),active:true });
-
-      await addDoc(collection(db,"history"),{ driver,mhe,action:"assigned",timestamp:new Date().toISOString() });
-
-      alert(`✅ Assigned ${driver} to ${mhe}`);
-      loadReport();
-      loadDashboard();
-    } catch(err){ console.error(err); alert("❌ Error assigning MHE."); }
-  }
-  window.assignKeyToDriver = assignKeyToDriver;
-
-  async function returnKey(mhe=null) {
-    mhe = mhe || document.getElementById("mheSelectKey").value;
-    if (!mhe) { alert("Please select an MHE"); return; }
-
-    const assignmentRef = doc(db,"assignments",mhe);
-    try {
-      const snap = await getDoc(assignmentRef);
-      if (!snap.exists() || !snap.data().active) { alert(`⚠️ MHE ${mhe} not in use.`); return; }
-
-      await updateDoc(assignmentRef,{ active:false, returnedAt:new Date().toISOString() });
-
-      await addDoc(collection(db,"history"),{ driver:snap.data().driver, mhe, action:"returned", timestamp:new Date().toISOString() });
-
-      alert(`✅ Key for ${mhe} returned`);
-      loadReport();
-      loadDashboard();
-    } catch(err){ console.error(err); alert("❌ Error returning."); }
-  }
-  window.returnKey = returnKey;
-
-let donutChart, barChart, lineChart, topDriversChart;
-
-
-async function loadDashboard() {
-  const snapshot = await getDocs(collection(db, "assignments"));
-  let occupied = 0;
-  const active = [];
-  const mheStatus = {}; // MHE → driver or null
-
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    mheStatus[data.mhe] = data.active ? data.driver : null;
-    if (data.active) {
-      occupied++;
-      active.push(`${data.mhe} → ${data.driver}`);
-    }
-  });
-
-  // --- Get total MHE count from dropdown ---
-  const dropdown = document.getElementById("mheSelectKey");
-  const total = dropdown ? dropdown.options.length - 1 : 0; // ignore "--Select MHE--"
-
-  const free = total - occupied;
-
-  // --- Update stat cards ---
-  document.getElementById("totalMhe").textContent = total;
-  document.getElementById("freeMhe").textContent = free;
-  document.getElementById("occupiedMhe").textContent = occupied;
-
-  // --- Update active list ---
-  const activeList = document.getElementById("activeAssignments");
-  activeList.innerHTML = active.length
-    ? active.map(a => `<li>${a}</li>`).join("")
-    : "<li>None</li>";
-
-  // --- Populate MHE cards grid ---
-  const mheGrid = document.getElementById("mheGrid");
-  mheGrid.innerHTML = ""; // clear previous
-  for (let i = 1; i <= total; i++) {
-    const mheName = `MHE${i}`;
-    const driver = mheStatus[mheName] || "Free";
-    const color = driver === "Free" ? "#22c55e" : "#ef4444";
-
-    const card = document.createElement("div");
-    card.style.background = "rgba(255,255,255,0.05)";
-    card.style.borderRadius = "12px";
-    card.style.padding = "15px";
-    card.style.textAlign = "center";
-    card.style.fontWeight = "bold";
-
-    card.innerHTML = `
-      <h4>${mheName}</h4>
-      <p style="color:${color}; font-size:16px;">${driver}</p>
-    `;
-    mheGrid.appendChild(card);
-  }
+  const q=query(collection(db,'drivers'),where('pin','==',pin));
+  const snap=await getDocs(q);
+  if(snap.empty){ document.body.innerHTML="<h2 style='color:red;text-align:center'>❌ Invalid PIN</h2>"; return; }
+  const docSnap=snap.docs[0]; currentUser={...(docSnap.data()),id:docSnap.id};
+  document.getElementById('homeButtons').style.display='none';
+  await loadDrivers(); selectDriverInDropdown(currentUser.name||currentUser.id);
+  openSection('takeKeysCard'); await loadDashboard(); renderTakeKeysGrid();
+  alert(`Welcome ${currentUser.name||currentUser.id}`);
 }
 
-
-  async function loadReport() {
-    const tbody=document.querySelector("#reportTable tbody");
-    tbody.innerHTML="";
-    const dateFilter=document.getElementById("reportDate").value;
-    const mheFilter=document.getElementById("mheFilter").value;
-    const driverFilter=document.getElementById("driverFilter").value.toLowerCase();
-
-    const q=query(collection(db,"history"),orderBy("timestamp","asc"));
-    const snapshot=await getDocs(q);
-    let usageCount={}, timeline={};
-    snapshot.forEach(docSnap=>{
-      const data=docSnap.data();
-      const docDate=data.timestamp.split("T")[0];
-      if((dateFilter&&docDate!==dateFilter)||(mheFilter&&data.mhe!==mheFilter)||(driverFilter&&!data.driver.toLowerCase().includes(driverFilter))) return;
-
-      const shift=new Date(data.timestamp).getHours()<15?"Morning":"Night";
-      let duration="";
-      if(data.action==="returned"&&data.returnedAt){ duration=Math.round((new Date(data.returnedAt)-new Date(data.assignedAt))/60000); }
-
-      const status=data.action==="assigned"?"Active":"Returned";
-      const tr=document.createElement("tr");
-      tr.innerHTML=`<td>${data.mhe}</td><td>${data.driver}</td><td>${data.action}</td><td>${new Date(data.timestamp).toLocaleString()}</td><td>${status}</td><td>${shift}</td><td>${duration||"-"}</td>`;
-      tbody.appendChild(tr);
-
-      usageCount[data.mhe]=(usageCount[data.mhe]||0)+1;
-      const hour=new Date(data.timestamp).getHours();
-      timeline[hour]=(timeline[hour]||0)+1;
-    });
-    drawCharts(usageCount,timeline);
-  }
-  window.loadReport=loadReport;
-
- async function exportToExcel() {
-  const snapshot = await getDocs(query(collection(db, "history"), orderBy("timestamp", "asc")));
-
-  const grouped = {}; // MHE → rows array
-  const pendingAssignments = {}; // temporary storage to pair assigned → returned
-
-  snapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    if (!grouped[data.mhe]) grouped[data.mhe] = [];
-
-    const key = `${data.driver}_${data.mhe}`;
-    const assignDate = new Date(data.timestamp);
-    const hrs = assignDate.getHours();
-    const mins = assignDate.getMinutes();
-    const totalMins = hrs * 60 + mins;
-    const shift = (totalMins >= 7 * 60 + 30 && totalMins <= 16 * 60) ? "Morning" : "Night";
-
-    if (data.action === "assigned") {
-      // store assigned temporarily
-      pendingAssignments[key] = {
-        Date: assignDate.toLocaleDateString(),
-        Driver: data.driver,
-        "Assign Time": assignDate.toLocaleString(),
-        "Return Time": "",
-        Duration: "-",
-        Shift: shift
-      };
-    } else if (data.action === "returned" && pendingAssignments[key]) {
-      const assigned = pendingAssignments[key];
-      const returnTime = assignDate;
-      const diffMs = returnTime - new Date(assigned["Assign Time"]);
-      const minsUsed = Math.floor(diffMs / 60000);
-      const h = Math.floor(minsUsed / 60);
-      const m = minsUsed % 60;
-
-      assigned["Return Time"] = returnTime.toLocaleString();
-      assigned["Duration"] = `${h}h ${m}m`;
-
-      grouped[data.mhe].push(assigned);
-      delete pendingAssignments[key]; // remove after pairing
-    }
-  });
-
-  // Add unreturned assignments (optional)
-  Object.values(pendingAssignments).forEach(val => {
-    grouped[val.Driver + "_" + val.MHE] = val;
-    grouped[val.MHE].push(val);
-  });
-
-  const wb = XLSX.utils.book_new();
-  Object.keys(grouped).forEach(mhe => {
-    const ws = XLSX.utils.json_to_sheet(grouped[mhe]);
-    XLSX.utils.book_append_sheet(wb, ws, mhe);
-  });
-
-  XLSX.writeFile(wb, `MHE_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+async function loadDrivers(){
+  const driverSelect=document.getElementById("driverSelect");
+  driverSelect.innerHTML='<option value="">-- Select Driver --</option>';
+  const snap=await getDocs(collection(db,"drivers"));
+  snap.forEach(d=>{ const data=d.data(); const o=document.createElement("option"); o.value=data.name||data.id; o.textContent=`${data.name||data.id}`; driverSelect.appendChild(o); });
+  if(currentUser){ driverSelect.value=currentUser.name||currentUser.id; driverSelect.disabled=true; document.getElementById('driverSearch').classList.add('hide'); }
+  else{ driverSelect.disabled=false; document.getElementById('driverSearch').classList.remove('hide'); }
 }
-window.exportToExcel = exportToExcel;
 
-  function drawCharts(usageCount,timeline){
+function selectDriverInDropdown(name){
+  const sel=document.getElementById('driverSelect');
+  for(let i=0;i<sel.options.length;i++){ if(sel.options[i].textContent.toLowerCase().includes(name.toLowerCase())){ sel.selectedIndex=i; break; } }
+  sel.disabled=true; document.getElementById('driverSearch').classList.add('hide');
+}
+
+async function assignKeyToDriver(driver,mhe,skipPin=false){
+  if(!driver||!mhe){ alert("Driver & MHE required"); return; }
+  const activeSnap=await getDocs(query(collection(db,"assignments"),where("driver","==",driver),where("active","==",true)));
+  if(!skipPin && !currentUser?.pin){ const enteredPin=prompt(`Enter PIN for ${driver}`); if(!enteredPin){ alert("PIN required"); return; } }
+  if(!activeSnap.empty){ alert(`❌ ${driver} already has an active MHE! Return key first.`); return; }
+
+  const mheRef=doc(db,"assignments",mhe); const mheSnap=await getDoc(mheRef);
+  if(mheSnap.exists() && mheSnap.data().active){ alert(`❌ ${mhe} already in use`); return; }
+
+  await setDoc(mheRef,{driver,mhe,assignedAt:new Date().toISOString(),active:true});
+  await addDoc(collection(db,"history"),{driver,mhe,action:"assigned",timestamp:new Date().toISOString()});
+  alert(`✅ ${driver} assigned to ${mhe}`);
+  await loadReport(); await loadDashboard(); renderTakeKeysGrid();
+}
+
+function onMheCardClick(mhe,isFree){
+  if(!isFree) return;
+  const driver=currentUser?currentUser.name||currentUser.id:document.getElementById('driverSelect').value;
+  if(!driver){ alert('Select driver'); return; }
+  if(confirm(`Confirm take ${mhe}?`)){ assignKeyToDriver(driver,mhe,currentUser?.pin?true:false); }
+}
+
+function manualAssignFromSelect(){
+  const driver=document.getElementById('driverSelect').value;
+  const mhe=prompt("Enter MHE (e.g. MHE3)"); if(!mhe) return;
+  assignKeyToDriver(driver,mhe,currentUser?.pin?true:false);
+}
+
+async function returnKey(mhe){
+  if(!mhe){ alert("Select MHE"); return; }
+  const ref=doc(db,"assignments",mhe); 
+  const snap=await getDoc(ref);
+  if(!snap.exists() || !snap.data().active){ alert(`${mhe} not active`); return; }
+
+  const assignedDriver = snap.data().driver;
+  if(currentUser && assignedDriver !== (currentUser.name || currentUser.id)){
+    alert(`❌ You can only return MHE assigned to you`);
+    return;
+  }
+
+  await updateDoc(ref,{active:false,returnedAt:new Date().toISOString()});
+  await addDoc(collection(db,"history"),{driver:assignedDriver,mhe,action:"returned",timestamp:new Date().toISOString()});
+  alert(`✅ ${mhe} returned`);
+  await loadReport(); 
+  await loadDashboard(); 
+  renderTakeKeysGrid();
+}
+
+async function loadDashboard(){
+  const snap=await getDocs(collection(db,"assignments"));
+  const mheStatus={}; let occupied=0,active=[];
+  snap.forEach(d=>{ const data=d.data(); mheStatus[data.mhe]=data.active?data.driver:null; if(data.active){occupied++; active.push(`${data.mhe}→${data.driver}`);} });
+  const total=11; const free=total-occupied;
+
+  const totalEl=document.getElementById("totalMhe");
+  const freeEl=document.getElementById("freeMhe");
+  const occupiedEl=document.getElementById("occupiedMhe");
+  [totalEl, freeEl, occupiedEl].forEach(el=>{ el.classList.add('update'); setTimeout(()=>el.classList.remove('update'),500); });
+
+  totalEl.textContent=total;
+  freeEl.textContent=free;
+  occupiedEl.textContent=occupied;
+  document.getElementById("activeAssignments").innerHTML=active.length?active.map(a=>`<li>${a}</li>`).join(''):'<li>None</li>';
+
+  const grid=document.getElementById("mheGrid"); grid.innerHTML='';
+  for(let i=1;i<=total;i++){
+    const name=`MHE${i}`;
+    const driver=mheStatus[name];
+    const div=document.createElement("div");
+    div.className='mhe-card '+(driver?'occupied':'free');
+    div.innerHTML=`<h4>${name}</h4><p>${driver?driver:'Free'}</p>`;
+    grid.appendChild(div);
+    setTimeout(()=>div.classList.add("show"),50*i); // stagger fade-in
+  }
+  renderTakeKeysGrid(mheStatus);
+}
+
+async function loadReport(){
+  const tbody=document.querySelector("#reportTable tbody"); tbody.innerHTML='';
+  const dateFilter=document.getElementById("reportDate").value;
+  const driverFilter=document.getElementById("driverFilter").value.toLowerCase();
+  const mheFilter=document.getElementById("mheFilter").value;
+
+  const snap=await getDocs(query(collection(db,"history"),orderBy("timestamp","asc")));
+  const usage={}, timeline={};
+  snap.forEach(d=>{ const data=d.data(); const dt=data.timestamp.split("T")[0]; if((dateFilter&&dt!==dateFilter)||(driverFilter&&!data.driver.toLowerCase().includes(driverFilter))||(mheFilter&&data.mhe!==mheFilter)) return;
+  const shift=new Date(data.timestamp).getHours()<15?"Morning":"Night";
+  let duration=""; if(data.action==="returned"&&data.returnedAt){ duration=Math.round((new Date(data.returnedAt)-new Date(data.assignedAt))/60000); }
+  const status=data.action==="assigned"?"Active":"Returned"; const tr=document.createElement("tr");
+  tr.innerHTML=`<td>${data.mhe}</td><td>${data.driver}</td><td>${data.action}</td><td>${new Date(data.timestamp).toLocaleString()}</td><td>${status
+}</td><td>${shift}</td><td>${duration||"-"}</td>`; 
+  tbody.appendChild(tr); 
+  usage[data.mhe]=(usage[data.mhe]||0)+1; 
+  const h=new Date(data.timestamp).getHours(); 
+  timeline[h]=(timeline[h]||0)+1; 
+  });
+  drawCharts(usage,timeline);
+}
+
+function drawCharts(usage,timeline){
+  try{ 
     new Chart(document.getElementById("usageChart"),{
       type:"bar",
-      data:{labels:Object.keys(usageCount),datasets:[{label:"MHE Usage Count",data:Object.values(usageCount)}]}
-    });
+      data:{
+        labels:Object.keys(usage),
+        datasets:[{label:"MHE Usage Count",data:Object.values(usage), backgroundColor:'#3b82f6'}]
+      },
+      options:{responsive:true, plugins:{legend:{display:true}}, animation:{duration:800}}
+    }); 
+
     new Chart(document.getElementById("timelineChart"),{
       type:"line",
-      data:{labels:Object.keys(timeline),datasets:[{label:"Usage by Hour",data:Object.values(timeline)}]}
+      data:{
+        labels:Object.keys(timeline),
+        datasets:[{label:"Usage by Hour",data:Object.values(timeline), borderColor:'#22c55e', fill:false, tension:0.3}]
+      },
+      options:{responsive:true, plugins:{legend:{display:true}}, animation:{duration:800}}
     });
-  }
+  }catch(e){console.warn(e);}
+}
 
-  // 🔎 Searchable dropdown filter
-  document.getElementById("driverSearch").addEventListener("input",()=>{
-    const filter=document.getElementById("driverSearch").value.toLowerCase();
-    Array.from(document.getElementById("driverSelect").options).forEach(opt=>{
-      opt.style.display=opt.textContent.toLowerCase().includes(filter)?"block":"none";
-    });
+async function exportToExcel(){
+  const snap=await getDocs(query(collection(db,"history"),orderBy("timestamp","asc")));
+  const grouped={},pending={};
+  snap.forEach(docSnap=>{ 
+    const data=docSnap.data(); 
+    const key=`${data.driver}_${data.mhe}`; 
+    const assignTime=new Date(data.timestamp);
+    if(data.action==="assigned"){ 
+      pending[key]={Date:assignTime.toLocaleDateString(),Driver:data.driver,"Assign Time":assignTime.toLocaleString(),"Return Time":"","Duration":"-"};}
+    else if(data.action==="returned"&&pending[key]){ 
+      const a=pending[key]; 
+      const diffMs=new Date(data.timestamp)-new Date(a["Assign Time"]); 
+      const mins=Math.floor(diffMs/60000); 
+      const h=Math.floor(mins/60); 
+      const m=mins%60; 
+      a["Return Time"]=new Date(data.timestamp).toLocaleString(); 
+      a["Duration"]=`${h}h ${m}m`; 
+      if(!grouped[data.mhe]) grouped[data.mhe]=[]; 
+      grouped[data.mhe].push(a); 
+      delete pending[key]; 
+    }
   });
-  document.getElementById("mheSearch").addEventListener("input",()=>{
-    const filter=document.getElementById("mheSearch").value.toLowerCase();
-    Array.from(document.getElementById("mheSelectKey").options).forEach(opt=>{
-      opt.style.display=opt.textContent.toLowerCase().includes(filter)?"block":"none";
-    });
+  Object.values(pending).forEach(v=>{ if(!grouped[v.Driver]) grouped[v.Driver]=[]; grouped[v.Driver].push(v); });
+  const wb=XLSX.utils.book_new(); 
+  Object.keys(grouped).forEach(mhe=>{ 
+    const ws=XLSX.utils.json_to_sheet(grouped[mhe]); 
+    XLSX.utils.book_append_sheet(wb,ws,mhe); 
   });
-  
+  XLSX.writeFile(wb,`MHE_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+}
+
+document.getElementById("driverSearch").addEventListener("input",()=>{
+  const filter=document.getElementById("driverSearch").value.toLowerCase(); 
+  Array.from(document.getElementById("driverSelect").options)
+       .forEach(o=>o.style.display=o.textContent.toLowerCase().includes(filter)?"block":"none"); 
+});
+
+async function renderTakeKeysGrid(mheStatusOverride=null){
+  const snap=await getDocs(collection(db,"assignments"));
+  const mheStatus={}; 
+  snap.forEach(d=>{ 
+    const data=d.data(); 
+    mheStatus[data.mhe]=data.active?data.driver:null; 
+  });
+  if(mheStatusOverride) Object.assign(mheStatus,mheStatusOverride);
+
+  const grid=document.getElementById("takeMheGrid"); 
+  grid.innerHTML=''; 
+  for(let i=1;i<=11;i++){ 
+    const name=`MHE${i}`; 
+    const driver=mheStatus[name]||null; 
+    const div=document.createElement('div'); 
+    div.className='mhe-card '+(driver?'occupied':'free'); 
+    if(driver){
+      div.innerHTML=`<h4>${name}</h4><p>${driver}</p>`;
+      if(currentUser && driver === (currentUser.name || currentUser.id)){
+        const retBtn=document.createElement('button');
+        retBtn.textContent='Return';
+        retBtn.className='action';
+        retBtn.style.marginTop='8px';
+        retBtn.onclick=()=>returnKey(name);
+        div.appendChild(retBtn);
+      }
+    } else {
+      div.innerHTML=`<h4>${name}</h4><p>Available</p>`;
+      div.addEventListener('click',()=>onMheCardClick(name,true));
+    }
+    grid.appendChild(div); 
+    setTimeout(()=>div.classList.add("show"),50*i); // staggered animation
+  }
+}
 </script>
 </body>
 </html>
