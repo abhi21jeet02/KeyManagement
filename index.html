@@ -222,8 +222,59 @@ const db = getFirestore(app);
 
 const SUPERVISOR_PIN = "1234";
 let currentUser = null;
+// Allowed location coordinates (example: latitude & longitude of your site)
+// Allowed location coordinates
+const ALLOWED_LAT = 28.492222465299086;
+const ALLOWED_LNG = 77.31337575184916;
+const ALLOWED_RADIUS_M = 500; // allowed radius in meters
 
-window.onload = checkAccess;
+// Haversine formula to calculate distance between two coords
+function getDistance(lat1, lon1, lat2, lon2){
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(Δφ/2)*Math.sin(Δφ/2) +
+            Math.cos(φ1)*Math.cos(φ2)*
+            Math.sin(Δλ/2)*Math.sin(Δλ/2);
+  const c = 2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  return R*c;
+}
+
+// Check location before allowing page to load
+async function checkLocation(){
+  if(!navigator.geolocation){
+    alert("Geolocation not supported. Cannot access page.");
+    document.body.innerHTML="<h2 style='color:red;text-align:center'>❌ Location access required</h2>";
+    throw new Error("No geolocation support");
+  }
+
+  return new Promise((resolve,reject)=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const dist = getDistance(ALLOWED_LAT, ALLOWED_LNG, pos.coords.latitude, pos.coords.longitude);
+      if(dist <= ALLOWED_RADIUS_M) resolve(true);
+      else {
+        document.body.innerHTML="<h2 style='color:red;text-align:center'>❌ You are not at the allowed location</h2>";
+        reject("Outside allowed location");
+      }
+    }, err=>{
+      document.body.innerHTML="<h2 style='color:red;text-align:center'>❌ Location permission denied</h2>";
+      reject(err);
+    });
+  });
+}
+
+
+window.onload = async () => {
+  try {
+    await checkLocation(); // check location first
+    checkAccess();          // then proceed with PIN
+  } catch(e) {
+    console.warn("Access denied:", e);
+  }
+};
+
 
 async function checkAccess(){
   const pin = prompt("Enter PIN:");
